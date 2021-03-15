@@ -4,7 +4,7 @@ from flask import Flask, render_template, request, flash, redirect, session, g
 from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
 
-from forms import UserAddForm, LoginForm, MessageForm
+from forms import UserAddForm, UserEditForm, LoginForm, MessageForm
 from models import db, connect_db, User, Message
 
 CURR_USER_KEY = "curr_user"
@@ -215,7 +215,28 @@ def profile():
     """Update profile for current user."""
 
     # IMPLEMENT THIS
+    if not g.user:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
 
+    user = g.user
+    form = UserEditForm(obj=user)
+
+    if form.validate_on_submit():
+
+        if User.authenticate(user.username, form.password.data):
+            user.username = form.username.data
+            user.email = form.email.data
+            user.image_url = form.image_url.data or "/static/images/default-pic.png"
+            user.header_image_url = form.header_image_url.data or "/static/images/warbler-hero.jpg"
+            db.session.add(user)
+            db.session.commit()
+            flash(f"{user.username}'s profile has been updated", "success")
+            return redirect(f'/users/{user.id}')
+        
+        flash("Wrong password, please try again.", 'danger')
+    
+    return render_template('users/edit.html',form=form, user_id=user.id)
 
 @app.route('/users/delete', methods=["POST"])
 def delete_user():
@@ -298,6 +319,7 @@ def homepage():
         messages = (Message
                     .query
                     .order_by(Message.timestamp.desc())
+                    .filter(Message.user_id.in_([u.id for u in g.user.following]+[g.user.id]))
                     .limit(100)
                     .all())
 
