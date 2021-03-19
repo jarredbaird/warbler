@@ -17,7 +17,6 @@ from models import db, connect_db, Message, User
 
 os.environ['DATABASE_URL'] = "postgresql:///warbler-test"
 
-
 # Now we can import app
 
 from app import app, CURR_USER_KEY
@@ -54,7 +53,7 @@ class MessageViewTestCase(TestCase):
         db.session.commit()
 
     def test_add_message(self):
-        """Can use add a message?"""
+        """Can user add a message?"""
 
         # Since we need to change the session to mimic logging in,
         # we need to use the changing-session trick:
@@ -73,3 +72,15 @@ class MessageViewTestCase(TestCase):
 
             msg = Message.query.one()
             self.assertEqual(msg.text, "Hello")
+
+    def test_unauthorized_message_add(self):
+        """ Can a not-logged in user add a message? """
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = -1
+            response = c.post("messages/new", data={"text": "Hello"})
+            self.assertEqual(response.status_code, 302)
+    """ Can a logged-in user delete another user's message? """
+    """ Can a not-logged-in user delete a message """
+    """ Can anyone view a message that does not exist? """
+    """ Can anyone view a message that exists? """

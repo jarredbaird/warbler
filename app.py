@@ -3,6 +3,7 @@ import os
 from flask import Flask, render_template, request, flash, redirect, session, g
 from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
+import pdb
 
 from forms import UserAddForm, UserEditForm, LoginForm, MessageForm
 from models import db, connect_db, User, Message, Likes
@@ -13,8 +14,7 @@ app = Flask(__name__)
 
 # Get DB_URI from environ variable (useful for production/testing) or,
 # if not set there, use development local db.
-app.config['SQLALCHEMY_DATABASE_URI'] = (
-    os.environ.get('DATABASE_URL', 'postgres:///warbler'))
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///warbler'
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = False
@@ -263,13 +263,12 @@ def messages_add():
 
     Show form if GET. If valid, update message and redirect to user page.
     """
-
     if not g.user:
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
     form = MessageForm()
-
+    
     if form.validate_on_submit():
         msg = Message(text=form.text.data)
         g.user.messages.append(msg)

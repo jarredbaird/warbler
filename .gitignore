@@ -2,3 +2,6 @@ venv
 requirements_old.txt
 __pycache__
 ERD.png
+.vscode
+requirements_noversion.txt
+start_test_terminal.py
